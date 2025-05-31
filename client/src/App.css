@@ -1,0 +1,21 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.app {
+  max-width: 360px;
+  text-align: center;
+  font-family: sans-serif;
+}
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: linear-gradient(135deg,#6C5CE7,#00B894);
+  color: #fff;
+  border-radius: 8px;
+}
+.players .player { margin-left: 8px; }
+.player.x { font-weight: bold; }
+.player.o { font-weight: bold; }

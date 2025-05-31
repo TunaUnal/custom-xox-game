@@ -1,0 +1,141 @@
+/* —————— GamePage.css (Birleştirilmiş ve Güncellenmiş) —————— */
+
+/* 1) Tam ekran kapsayıcı, ortalamak için */
+.game-page {
+  height: 100vh;
+  background: #f0f4f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 2) Kart (game-card) stili */
+.game-card {
+  max-width: 360px;
+  width: 100%;
+  border-radius: 12px;
+  background: #fff;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: box-shadow 0.3s, border 0.3s;
+}
+
+/* Kart kazanan durumunda glow eklemek istersen */
+.game-card.win {
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.6);
+  border: 2px solid #ffeaa7;
+}
+
+/* 3) Players bar */
+.players .me-player,
+.players .opp-player {
+  font-size: 0.9rem;
+}
+
+.players .me-player .badge,
+.players .opp-player .badge {
+  margin-right: 0.25rem;
+}
+
+/* 4) Board: 3x3 grid */
+.board {
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  gap: 8px;
+}
+
+/* Board kazanan durumunda diğer hücreleri soldur */
+.board.win-mode .cell:not(.winning) {
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+/* 5) Her bir hücre (.cell) */
+.cell {
+  background: #F3F2F7;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  width: 80px;
+  height: 80px;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.1s, opacity 0.3s, border 0.2s;
+  cursor: not-allowed; /* Varsayılan: tıklanamaz */
+}
+
+/* Responsive: çok küçük ekranlarda hücre boyutunu otomatik ayarla */
+@media (max-width: 400px) {
+  .cell {
+    width: calc((100vw - 64px) / 3);
+    height: calc((100vw - 64px) / 3);
+  }
+}
+
+/* 6) Tıklanabilir hücreler (.clickable) */
+.cell.clickable:hover {
+  cursor: pointer; /* Sadece tıklanabilir hücreler pointer alır */
+  transform: scale(1.05);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 7) X ve O renkleri (kendi kullanıcı sembolüne göre) */
+.cell.userColor {
+  color: #0984E3;
+}
+.cell.otherColor {
+  color: #D63031;
+}
+
+/* 8) Silinecek en eski taş için özel vurgu (.oldest) */
+.cell.oldest {
+  opacity: 0.5;              /* Yarı saydam */
+  border: 1px dotted red;    /* Kırmızı noktalı kenarlık */
+  box-shadow: none;
+}
+
+/* Silinecek en eski taş hover efektini iptal et */
+.cell.oldest:hover {
+  transform: scale(1);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* 9) Kazanan hücreler için glow/renk vurgu (.winning) */
+.cell.winning {
+  background-color: #ffeaa7;               /* Hafif sarı ton */
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.8); /* Parlak altın glow */
+  color: #2d3436;                          /* Yazıyı koyu göster */
+}
+
+/* 10) Sıra / kazanma göstergesi (.turn-indicator) */
+.turn-indicator {
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-top: 8px;
+  color: #2d3436;
+}
+
+/* Kazanan mesajı için vurgu animasyonu */
+.turn-indicator.win {
+  color: #e17055;                /* Kırmızımsı */
+  font-size: 1.3rem;
+  animation: pulse 1s infinite;  /* Hafif büyüme/küçülme */
+}
+
+/* 11) Pulse animasyonu tanımı */
+@keyframes pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* 12) Bootstrap badge renk geçersiz kılma */
+.badge.bg-primary {
+  background-color: #0984E3 !important;
+}
+.badge.bg-danger {
+  background-color: #D63031 !important;
+}

@@ -1,0 +1,48 @@
+/* Sayfa tam yükseklik, merkeze al */
+.login-page {
+  height: 100vh;
+  background: #f0f4f8;
+}
+
+/* Kart stili */
+.card {
+  border-radius: 12px;
+  background: #fff;
+}
+
+/* Başlık */
+.card h2 {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Buton renkleri */
+.btn-primary {
+  background: #6c5ce7;
+  border: none;
+}
+.btn-primary:hover {
+  background: #5a4ecb;
+}
+
+.btn-success {
+  background: #00b894;
+  border: none;
+}
+.btn-success:hover {
+  background: #019f7a;
+}
+
+/* Input-group köşe yuvarlatmaları */
+.input-group .form-control {
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+}
+.input-group .btn {
+  border-radius: 0 8px 8px 0;
+}
+
+/* Gölge efekti */
+.shadow-sm {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
