@@ -2,7 +2,8 @@ import React, { useState , useEffect} from 'react';
 import LoginPage from './pages/LoginPage';
 import { io } from 'socket.io-client';
 import GamePage from './pages/GamePage';
-
+import toast from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 const socket = io('http://localhost:3000');
 
 function App() {
@@ -11,6 +12,10 @@ function App() {
   const [room, setRoom]     = useState('');
   
   useEffect(() => {
+    socket.on('err', error => {
+      toast.error(error);
+    })
+
     socket.on('roomCreated', (getUser, getRoom) => {
       setUser(getUser);
       setRoom(getRoom);
@@ -23,7 +28,8 @@ function App() {
       setStatus('game');
     });
 
-    socket.on('someoneJoined', getRoom => {
+    socket.on('someoneJoined', (getNewUser, getRoom) => {
+      toast.success(getNewUser + " odaya katıldı")
       setRoom(getRoom);
     })
 
@@ -48,8 +54,8 @@ function App() {
 
   };
 
-  if (status == "login") return <LoginPage onCreateRoom={createRoom} onJoinRoom={joinRoom} />;
-  return <GamePage user={user} room={room} socket={socket} setUser={setUser} setRoom={setRoom}/>
+  if (status == "login") return (<> <Toaster></Toaster> <LoginPage onCreateRoom={createRoom} onJoinRoom={joinRoom} /> </>);
+  return (<><Toaster></Toaster><GamePage user={user} room={room} socket={socket} setUser={setUser} setRoom={setRoom}/></>)
 }
 
 export default App;

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import './assets/LoginPage.css';
-
+import toast from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 export default function LoginPage({ onCreateRoom, onJoinRoom }) {
     const [username, setUsername] = useState('');
     const [joinCode, setJoinCode] = useState('');
 
     const handleCreate = () => {
-        if (!username.trim()) return alert('Önce isim gir!');
+        if (!username.trim()) return toast.error("İsim gir.");
         const user = {
             username: username.trim(),
             id: Date.now()
@@ -15,7 +16,7 @@ export default function LoginPage({ onCreateRoom, onJoinRoom }) {
     };
 
     const handleJoin = () => {
-        if (!username.trim() || !joinCode.trim()) return alert('İsim ve oda kodu gerekli!');
+        if (!username.trim() || !joinCode.trim()) return toast.error('İsim ve oda kodu gerekli');
         const user = {
             username: username.trim(),
             id: Date.now()
