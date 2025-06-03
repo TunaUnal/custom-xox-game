@@ -25,6 +25,13 @@ function createEmptyGame() {
 	};
 }
 
+function swapRoles(room) {
+	if (room.users.length === 2) {
+		[room.users[0].userRole, room.users[1].userRole] = [room.users[1].userRole, room.users[0].userRole];
+	}
+
+}
+
 function genCode(len = 4) {
 	const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	let s = '';
@@ -45,6 +52,7 @@ io.on('connection', (socket) => {
 			id: code,
 			users: [newUser],
 			game: {
+				number: 1,
 				board: Array(9).fill(null),
 				moveHistory: [],
 				turn: 'X', // Oda sahibi her zaman X'tir.
@@ -52,9 +60,7 @@ io.on('connection', (socket) => {
 				restartGame: 0
 			},
 			gameHistory: {
-				total: {
-					"X": 0, "Y": 0
-				},
+				total: {},
 				history: []
 			}
 		});
@@ -133,7 +139,10 @@ io.on('connection', (socket) => {
 			// Kazanan var: tüm odadakilere gameOver bildir
 			winnerUser = room.users.find(usr => usr.userRole == result.player);
 			room.game.win = { isWin: true, winner: winnerUser, line: result.line }
-			io.to(roomCode).emit('gameOver', room.game);
+
+			room.gameHistory.total[room.game.win.winner.sid] = (room.gameHistory.total[room.game.win.winner.sid] || 0) + 1
+
+			io.to(roomCode).emit('gameOver', room.game, room.gameHistory);
 			return;
 		}
 
@@ -160,8 +169,14 @@ io.on('connection', (socket) => {
 		//! socket.emit ile feedback ver.
 
 		if (room.game.restartGame == 2) {
+
+
+			//room.gameHistory.history.push({winner : room.game.win.winner.sid, number : room.gameHistory.history.length })
+
+
+			swapRoles(room)
 			room.game = createEmptyGame();
-			io.to(room.id).emit('gameRestart', room.game);
+			io.to(room.id).emit('gameRestart', room);
 		} else {
 			io.to(room.id).emit('boardUpdate', room.game);
 		}

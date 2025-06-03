@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import './assets/GamePage.css';
 
-export default function GamePage({ user, room, socket }) {
+export default function GamePage({ user, room, socket, setUser, setRoom }) {
     const [rakip, setRakip] = useState('');
     const [game, setGame] = useState(room.game)
     const [removed, setRemoved] = useState(null)
+    const [restartBtn, setRestartBtn] = useState(false)
+    const [gameHistory, setGameHistory] = useState(null)
 
     useEffect(() => {
         if (room.users.length !== 1) {
@@ -32,9 +34,10 @@ export default function GamePage({ user, room, socket }) {
     const restartHandle = () => {
         if (!game.win.isWin) return;
         // Eğer oyun henüz kazanılmamışsa işlem yapma.
-
-        socket.emit('restartGame', {userID:user.sid, roomCode:room.id});
+        socket.emit('restartGame', { userID: user.sid, roomCode: room.id });
+        setRestartBtn(true)
     }
+
     useEffect(() => {
         socket.on('boardUpdate', getGame => {
             setGame(getGame)
@@ -45,19 +48,30 @@ export default function GamePage({ user, room, socket }) {
 
         })
 
-        socket.on('gameOver', getGame => {
+        socket.on('gameOver', (getGame, getGameHistory) => {
             setGame(getGame)
+            setGameHistory(getGameHistory)
         })
 
-        socket.on('gameRestart', getGame => {
-            setGame(getGame)
+        socket.on('gameRestart', getRoom => {
+            setUser(() => getRoom.users.find(u=> u.sid == user.sid));
+            setGame(getRoom.game)
+            setGameHistory(getRoom.gameHistory)
+            setRemoved(null)
+            setRestartBtn(false)
+            setRakip(() => getRoom.users.find(usr => usr.id !== user.id))
+        })
+
+        socket.on('updateRoles', getUser => {
+            setUser(getUser)
+            console.log(getUser)
         })
 
     }, [])
 
 
     return (
-        <div className="game-page d-flex align-items-center justify-content-center">
+        <div className="game-page d-flex align-items-center justify-content-center flex-column">
             <div className="card game-card p-4 shadow-sm text-center">
                 {/* ÜST BAR */}
                 <h4 className="mb-0">Oda: <span className="fw-bold">{room.id}</span></h4>
@@ -73,8 +87,6 @@ export default function GamePage({ user, room, socket }) {
 
                 {/* OYUN TAHTASI */}
                 <div className="board mb-3">
-                    {console.log("game objesini veriom")}
-                    {console.log(game)}
                     {game.board.map((val, idx) => (
                         <div
                             key={idx}
@@ -104,10 +116,25 @@ export default function GamePage({ user, room, socket }) {
                 {game.win.isWin && (
 
                     <div className="remake">
-                        <button className='btn btn-primary w-100 btn-large' onClick={() => restartHandle()}>Yeniden Başlat</button>
+                        <button className='btn btn-primary w-100 btn-large' onClick={() => restartHandle()}>{restartBtn ? "Karşı Taraf Bekleniyor..." : "Yeniden Başlat"}</button>
                     </div>
                 )}
             </div>
-            </div>
-            );
+            {
+                gameHistory &&
+                <div
+                    className={`
+                            alert info d-flex justify-content-between w-100 mt-2
+                            ${gameHistory.total[user.sid] > gameHistory.total[rakip.sid] ? "alert-success" : ''} 
+                            ${gameHistory.total[user.sid] == gameHistory.total[rakip.sid] ? "alert-warning" : ''} 
+                            ${gameHistory.total[user.sid] < gameHistory.total[rakip.sid] ? "alert-danger" : ''} 
+                            `}
+                >
+                    <h3 className='w-100 text-center' >Sen : {gameHistory.total[user.sid]}</h3>
+                    -
+                    <h3 className='text-center w-100' > {rakip.username} : {gameHistory.total[rakip.sid]}</h3>
+                </div>
+            }
+        </div>
+    );
 }

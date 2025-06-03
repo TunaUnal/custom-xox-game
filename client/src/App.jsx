@@ -12,21 +12,13 @@ function App() {
   
   useEffect(() => {
     socket.on('roomCreated', (getUser, getRoom) => {
-      console.log("user : ")
-      console.log(getUser)
-      console.log("room : ")
-      console.log(getRoom)
       setUser(getUser);
-      console.log("Sunucudan haber geldi. Oda oluşturuldu.");
       setRoom(getRoom);
       setStatus('game');
     });
     
     socket.on('roomJoined', (getUser,getRoom) => {
-      setUser(getUser)
-      console.log("Sunucudan haber geldi. Odaya katıldık. Room : ");
-      console.log(getRoom);
-      
+      setUser(getUser) 
       setRoom(getRoom);
       setStatus('game');
     });
@@ -57,7 +49,7 @@ function App() {
   };
 
   if (status == "login") return <LoginPage onCreateRoom={createRoom} onJoinRoom={joinRoom} />;
-  return <GamePage user={user} room={room} socket={socket}/>
+  return <GamePage user={user} room={room} socket={socket} setUser={setUser} setRoom={setRoom}/>
 }
 
 export default App;

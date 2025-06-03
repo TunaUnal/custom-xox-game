@@ -139,3 +139,8 @@
 .badge.bg-danger {
   background-color: #D63031 !important;
 }
+
+
+.info{
+  max-width: 360px;
+}
