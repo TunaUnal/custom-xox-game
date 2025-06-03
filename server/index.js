@@ -9,11 +9,21 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
 	cors: {
-		origin: "*",  // Geliştirme için serbest
+		origin: "*",
 	}
 });
 
 const rooms = [];
+
+function createEmptyGame() {
+	return {
+		board: Array(9).fill(null),
+		moveHistory: [],
+		turn: 'X', // Oda sahibi her zaman X'tir.
+		win: { isWin: false, winner: null, line: null },
+		restartGame: 0
+	};
+}
 
 function genCode(len = 4) {
 	const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -23,36 +33,36 @@ function genCode(len = 4) {
 }
 
 io.on('connection', (socket) => {
-	console.log('Bir kullanıcı bağlandı:', socket.id);
-
-	socket.on('sendMessage', msg => {
-		const rc = msg.room;
-		console.log(rc + " odasına " + msg.username + " tarafından mesaj geldi")
-		if (!rc) return;
-		io.to(rc).emit('message', msg);
-	});
+	console.log('New connection:', socket.id);
 
 	socket.on('createRoom', user => {
 		socket.data.username = user.username;
+
 		const code = genCode();
 		const newUser = { id: user.id, sid: socket.id, username: user.username, userRole: "X" }
+
 		rooms.push({
 			id: code,
 			users: [newUser],
 			game: {
 				board: Array(9).fill(null),
-				moveHistory: [],       // FIFO için
-				turn: 'X',
-				win: { isWin: false, winner: null, line: null }            // her zaman “X” ile başla
+				moveHistory: [],
+				turn: 'X', // Oda sahibi her zaman X'tir.
+				win: { isWin: false, winner: null, line: null },
+				restartGame: 0
+			},
+			gameHistory: {
+				total: {
+					"X": 0, "Y": 0
+				},
+				history: []
 			}
 		});
-		socket.join(code); // Odayı oluşturan kullanıcıyı kurduğu odaya dahil ettik.
+
+		socket.join(code);		// Odayı oluşturan kullanıcıyı kurduğu odaya dahil ettik.
 		socket.data.userRoom = code;
+
 		const room = rooms.find(room => room.id == code)
-		console.log("Birazdan göndericem, newUser = ")
-		console.log(newUser)
-		console.log("Birazdan göndericem, room = ")
-		console.log(room);
 
 		socket.emit('roomCreated', newUser, room);
 		console.log(`🔨 Room ${code} created by ${user.username}`);
@@ -60,115 +70,121 @@ io.on('connection', (socket) => {
 
 	socket.on('joinRoom', ({ user, roomCode }) => {
 		socket.data.username = user.username;
+
 		const room = rooms.find(room => room.id == roomCode)
+
 		if (!room) {
 			return socket.emit('err', 'Oda bulunamadı.');
 		}
+
 		if (room.users.length >= 2) {
 			return socket.emit('err', 'Oda dolu.');
 		}
+
 		const newUser = { id: user.id, sid: socket.id, username: user.username, userRole: "O" }
 
 		room.users.push(newUser) // Kullanıcıyı room değişkenine ekledik
 		socket.join(roomCode); // Kullanıcıyı odaya dahil ettik
+
 		socket.data.userRoom = roomCode;
 
 		socket.emit('roomJoined', newUser, room);
-		// diğerine bildir
 		io.to(roomCode).emit('someoneJoined', room);
 
-
 		console.log(`🚪 ${user.username} joined room ${roomCode}`);
-
 
 		if (room.users.length === 2) {
 			io.to(room.id).emit('gameStart', { turn: 'X' });
 		}
 	});
 
-
 	socket.on('makeMove', ({ index, roomCode }) => {
+
 		const room = rooms.find(r => r.id === roomCode);
 		if (!room || !room.game) return;
 
 		const me = room.users.find(u => u.sid === socket.id);
-		if (!me || me.userRole !== room.game.turn) return;  // senin sıran değil
+		if (!me || me.userRole !== room.game.turn) return;
 
-		// 1) FIFO board güncellemesi
-		if (room.game.moveHistory.length >= 9) {
-			const oldest = room.game.moveHistory.shift();
-			room.game.board[oldest.index] = null;
-		}
-		console.log(index + " e tıklandı")
+		console.log(me.username + " put " + me.userRole + " at cell of " + index)
 
-		// 2) Yeni hamleyi kaydet
-		room.game.moveHistory.push({ index, symbol: me.userRole });
-		console.log(room.game.moveHistory)
+		// Hamleyi tahtaya işle
 		room.game.board[index] = me.userRole;
 
+		// Yeni hamleyi geçmişe kaydet
+		room.game.moveHistory.push({ index, symbol: me.userRole });
+
+		// Eğer 7. taşa gelindiyse ilkini sil.
 		if (room.game.moveHistory.length >= 7) {
-			console.log("sinigidislfkdkşfl")
 			const oldest = room.game.moveHistory.shift();
+			console.log("Deleted " + room.game.board[oldest.index] + " at cell of + " + oldest.index)
 			room.game.board[oldest.index] = null;
 		}
 
-
-
-		let tahta = room.game.board;
-		console.log("======== STATUS ===========");
-
-		console.log(tahta[0] + " " + tahta[1] + " " + tahta[2])
-		console.log(tahta[3] + " " + tahta[4] + " " + tahta[5])
-		console.log(tahta[6] + " " + tahta[7] + " " + tahta[8])
-		// 4) Sırayı değiştir
+		// Oyun sırasını değiştir
 		room.game.turn = room.game.turn === 'X' ? 'O' : 'X';
 
-		// 5) Durumu yay
+		// Sonucu (oyunu) odaya gönder
 		io.to(roomCode).emit('boardUpdate', room.game);
 
-
-		// 3) Kazanma kontrolü
+		// Kazanma kontrolü
 		const result = checkWinAtMove(room.game.board, index, 3);
 		if (result) {
 			// Kazanan var: tüm odadakilere gameOver bildir
 			winnerUser = room.users.find(usr => usr.userRole == result.player);
-			io.to(roomCode).emit('gameOver', {
-				board: room.game.board,
-				turn: room.game.turn,
-				history: room.game.moveHistory,
-				win: { isWin: true, winner: winnerUser, line: result.line }
-			});
-			// Oyun bitince istersen room.game’i null’a çekebilir veya sadece 
-			// kazanmadan sonra hamle kabul etmeyebilirsiniz.
+			room.game.win = { isWin: true, winner: winnerUser, line: result.line }
+			io.to(roomCode).emit('gameOver', room.game);
 			return;
 		}
 
-
 	});
 
+	socket.on('restartGame', ({ userID, roomCode }) => {
+
+		const room = rooms.find(room => room.id == roomCode);
+		if (!room) {
+			socket.emit('err', "Oda Bulunamadı");
+			console.log("no room")
+			return;
+		}
+
+		const user = room.users.find(usr => usr.sid == userID);
+		if (!user) {
+			socket.emit('err', "Kullanıcı Bulunamadı");
+			console.log("no usrt");
+
+			return;
+		}
+		room.game.restartGame += 1;
+
+		//! socket.emit ile feedback ver.
+
+		if (room.game.restartGame == 2) {
+			room.game = createEmptyGame();
+			io.to(room.id).emit('gameRestart', room.game);
+		} else {
+			io.to(room.id).emit('boardUpdate', room.game);
+		}
 
 
-
-
+	})
 
 	socket.on('disconnect', (reason) => {
-		console.log(`❌ Disconnect tetiklendi! socket.id=${socket.id}`, 'Sebep:', reason);
-		console.log('Socket.username:', socket.data.username, " odası : " + socket.data.userRoom);
+		console.log(socket.data.username, ' disconnect');
 		if (socket.data.username) {
 			const roomCode = socket.data.userRoom;
-			if (!roomCode) { console.log("oda kodu yok aga noluyo"); return; };
+			if (!roomCode) { console.log("HATA | Oyuncu çıktı ama oda kodu yok."); return; };
 			const idx = rooms.findIndex(room => room.id == socket.data.userRoom)
-			if (idx == -1) { console.log("aga odayı bulamıyom"); return; };
+			if (idx == -1) { console.log("HATA | Oyuncu çıktı ama odayı bulamadım."); return; };
 
 			const room = rooms[idx];
 			room.users = room.users.filter(u => u.username !== socket.data.username)
 
+			//Eğer odada kimse kalmamışsa odayı kapat.
 			if (room.users.length === 0) {
 				rooms.splice(idx, 1);
 			} else {
 				io.to(socket.data.userRoom).emit('someoneLeaved', room);
-				console.log(`${socket.data.username} ayrılıyor, broadcast yapıyorum.`);
-				socket.broadcast.emit('userLogout', { username: socket.data.username });
 			}
 		}
 	});
