@@ -28,12 +28,35 @@ function App() {
       setStatus('game');
     });
 
+    socket.on('roomLeaved', () => {
+      toast.success('Odadan ayrıldın.')
+      setRoom(null);
+      setStatus('login');
+    })
+
+    socket.on('roomKicked', () => {
+      toast.error('Odadan atıldın.')
+      setRoom(null);
+      setStatus('login');
+    })
+
+    socket.on('userKicked', (getRoom, kickedUserName) => {
+      setRoom(getRoom)
+      toast.success(kickedUserName + " adlı oyuncuyu odadan attın")
+    })
+
     socket.on('someoneJoined', (getNewUser, getRoom) => {
       toast.success(getNewUser + " odaya katıldı")
       setRoom(getRoom);
     })
 
-    socket.on('someoneLeaved', getRoom => {
+    socket.on('someoneLeaved', (getLeavedUser,getRoom,youAreNowOwner) => {
+      if(youAreNowOwner){
+        toast.success(getLeavedUser + " odadan ayrıldı. Artık oda sahibi sensin.")
+      }else{
+        toast.success(getLeavedUser + " odadan ayrıldı.")
+      }
+
       setRoom(getRoom);
     })
 

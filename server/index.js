@@ -51,6 +51,7 @@ io.on('connection', (socket) => {
 		rooms.push({
 			id: code,
 			users: [newUser],
+			owner: socket.id,
 			game: {
 				number: 1,
 				board: Array(9).fill(null),
@@ -87,7 +88,9 @@ io.on('connection', (socket) => {
 			return socket.emit('err', 'Oda dolu.');
 		}
 
-		const newUser = { id: user.id, sid: socket.id, username: user.username, userRole: "O" }
+		let role = room.users[0].userRole == 'X' ? 'O' : 'X'
+
+		const newUser = { id: user.id, sid: socket.id, username: user.username, userRole: role }
 
 		room.users.push(newUser) // Kullanıcıyı room değişkenine ekledik
 		socket.join(roomCode); // Kullanıcıyı odaya dahil ettik
@@ -95,7 +98,7 @@ io.on('connection', (socket) => {
 		socket.data.userRoom = roomCode;
 
 		socket.emit('roomJoined', newUser, room);
-		io.to(roomCode).emit('someoneJoined', room);
+		io.to(roomCode).emit('someoneJoined', newUser.username, room);
 
 		console.log(`🚪 ${user.username} joined room ${roomCode}`);
 
@@ -181,6 +184,81 @@ io.on('connection', (socket) => {
 			io.to(room.id).emit('boardUpdate', room.game);
 		}
 
+
+	})
+
+	socket.on('quitRoom', () => {
+
+		const room = rooms.find(room => room.id == socket.data.userRoom);
+		if (!room) {
+			socket.emit('err', "Oda Bulunamadı");
+			console.log("no room")
+			return;
+		}
+
+		const user = room.users.find(usr => usr.sid == socket.id);
+		if (!user) {
+			socket.emit('err', "Kullanıcı Bulunamadı");
+			console.log("no user");
+			return;
+		}
+
+		console.log(user.username + " " + room.id + " odasından çıkmak istiyor.")
+		socket.leave(room.id);
+
+		room.users = room.users.filter(u => u.sid !== user.sid);
+		delete socket.data.userRoom; // Oda bilgisini temizle
+
+		if (room.users.length == 0) {
+			const idx = rooms.findIndex(r => r.id === room.id);
+			rooms.splice(idx, 1);
+			console.log(`Oda ${room.id} tamamen silindi.`);
+		} else {
+			let youAreNowOwner = false;
+
+			//Eğer ayrılan kişi oda sahibi ise;
+			if (room.owner == user.sid) {
+				//Odada kalan diğer kişiyi oda sahibi yaptık.
+				room.owner = room.users[0].sid
+				youAreNowOwner = true
+			}
+
+			io.to(room.id).emit('someoneLeaved', user.username, room, youAreNowOwner);
+		}
+		socket.emit('roomLeaved')
+
+	})
+
+	socket.on('kickUser', () => {
+		const room = rooms.find(room => room.id == socket.data.userRoom);
+		if (!room) {
+			socket.emit('err', "Oda Bulunamadı");
+			console.log("no room")
+			return;
+		}
+
+		const user = room.users.find(usr => usr.sid == socket.id);
+		if (!user) {
+			socket.emit('err', "Kullanıcı Bulunamadı");
+			console.log("no user");
+			return;
+		}
+
+		//TODO : ADMİN KONTROLÜ
+		//TODO : Eğer user admin değilse işlem yapma.
+
+		const kickedUser = room.users.find(usr => usr.sid != user.sid)
+
+		console.log(user.username + ", " + kickedUser.username + " adlı kullanıyı odadan atmak istiyor ");
+
+		const targetSocket = io.sockets.sockets.get(kickedUser.sid);
+		if (targetSocket) {
+			targetSocket.leave(room.id);      // Kullanıcı odadan çıkarılır
+			targetSocket.emit('roomKicked');      // Ona "Atıldın" mesajı gönderilir
+		}
+
+		room.users = room.users.filter(usr => usr.sid != kickedUser.sid)
+		io.to(room.id).emit('userKicked', room, kickedUser.username);
 
 	})
 

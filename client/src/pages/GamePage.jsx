@@ -38,6 +38,14 @@ export default function GamePage({ user, room, socket, setUser, setRoom }) {
         setRestartBtn(true)
     }
 
+    const quitRoomHandle = () => {
+        socket.emit('quitRoom')
+    }
+
+    const kickRoomHandle = () => {
+        socket.emit('kickUser')
+    }
+
     useEffect(() => {
         socket.on('boardUpdate', getGame => {
             setGame(getGame)
@@ -54,7 +62,7 @@ export default function GamePage({ user, room, socket, setUser, setRoom }) {
         })
 
         socket.on('gameRestart', getRoom => {
-            setUser(() => getRoom.users.find(u=> u.sid == user.sid));
+            setUser(() => getRoom.users.find(u => u.sid == user.sid));
             setGame(getRoom.game)
             setGameHistory(getRoom.gameHistory)
             setRemoved(null)
@@ -135,6 +143,13 @@ export default function GamePage({ user, room, socket, setUser, setRoom }) {
                     <h3 className='text-center w-100' > {rakip.username} : {gameHistory.total[rakip.sid]}</h3>
                 </div>
             }
+            <div className='info w-100' >
+                <hr />
+                <h3 className='text-center' >İşlemler</h3>
+                <button className='btn btn-danger btn-sm w-100' onClick={()=>quitRoomHandle()} >Odadan Çık</button>
+                {(room.owner == user.sid && room.users.length == 2) && <button className='btn btn-warning btn-sm w-100 mt-2' onClick={()=>kickRoomHandle()}  > {rakip.username}'i odadan çıkar</button>}
+
+            </div>
         </div>
     );
 }
