@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 import GamePage from './pages/GamePage';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
-const socket = io('http://localhost:3000');
+const socket = io('https://custom-xox-game.onrender.com:3000');
 
 function App() {
   const [status, setStatus] = useState('login') // login - game
