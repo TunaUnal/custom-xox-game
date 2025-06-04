@@ -133,14 +133,14 @@ export default function GamePage({ user, room, socket, setUser, setRoom }) {
                 <div
                     className={`
                             alert info d-flex justify-content-between w-100 mt-2
-                            ${gameHistory.total[user.sid] > gameHistory.total[rakip.sid] ? "alert-success" : ''} 
-                            ${gameHistory.total[user.sid] == gameHistory.total[rakip.sid] ? "alert-warning" : ''} 
-                            ${gameHistory.total[user.sid] < gameHistory.total[rakip.sid] ? "alert-danger" : ''} 
+                            ${(gameHistory.total[user.sid] || 0) > (gameHistory.total[rakip.sid] || 0) ? "alert-success" : ''} 
+                            ${(gameHistory.total[user.sid] || 0) == (gameHistory.total[rakip.sid] || 0) ? "alert-warning" : ''} 
+                            ${(gameHistory.total[user.sid] || 0) < (gameHistory.total[rakip.sid] || 0) ? "alert-danger" : ''} 
                             `}
                 >
-                    <h3 className='w-100 text-center' >Sen : {gameHistory.total[user.sid]}</h3>
+                    <h3 className='w-100 text-center' >Sen : {(gameHistory.total[user.sid] || 0)}</h3>
                     -
-                    <h3 className='text-center w-100' > {rakip.username} : {gameHistory.total[rakip.sid]}</h3>
+                    <h3 className='text-center w-100' > {rakip.username} : {(gameHistory.total[rakip.sid] || 0)}</h3>
                 </div>
             }
             <div className='info w-100' >

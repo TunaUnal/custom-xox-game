@@ -50,7 +50,7 @@ function App() {
       setRoom(getRoom);
     })
 
-    socket.on('someoneLeaved', (getLeavedUser,getRoom,youAreNowOwner) => {
+    socket.on('someoneLeaved', (getRoom, getLeavedUser,youAreNowOwner) => {
       if(youAreNowOwner){
         toast.success(getLeavedUser + " odadan ayrıldı. Artık oda sahibi sensin.")
       }else{
