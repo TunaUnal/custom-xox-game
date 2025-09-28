@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import GamePage from "./pages/GamePage";
 import toast from "react-hot-toast";
 import { Toaster } from "react-hot-toast";
-const socket = io("http://y4gk8woksskw0k88ccsk0cos.5.133.102.227.sslip.io/");
+const socket = io("https://gameapi.tunaunal.com");
 
 function App() {
   const [status, setStatus] = useState("login"); // login - game
